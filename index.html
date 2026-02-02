@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>💘</title>
+
+  <style>
+    :root{
+      --bg:#0b0b14;
+      --text:#ffffff;
+      --muted:#ffffffc9;
+      --yes:#ff3d8d;
+      --yes2:#ff79b0;
+      --line:#ffffff22;
+      --card: rgba(17,18,36,.88);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      padding:22px;
+      overflow:hidden;
+    }
+
+    /* ===== BACKGROUND COM AS TUAS FOTOS (SEM BLUR) ===== */
+    .bg{
+      position:fixed;
+      inset:0;
+      z-index:-3;
+      background:#000;
+    }
+
+    .layer{
+      position:absolute;
+      inset:0;
+
+      background-size: cover;
+      background-position: center 6%; /* 👈 puxa para cima (cara mais visível) */
+      background-repeat: no-repeat;
+
+      transform: scale(1.01);
+      filter: brightness(0.95) saturate(1.10) contrast(1.06);
+      transition: opacity 900ms ease-in-out;
+    }
+    #layerA{ opacity:1; }
+    #layerB{ opacity:0; }
+
+    /* escurece mais em baixo (para ler a box), deixa topo limpo para a cara */
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        linear-gradient(180deg,
+          rgba(0,0,0,0.06) 0%,
+          rgba(0,0,0,0.12) 35%,
+          rgba(0,0,0,0.55) 100%
+        );
+    }
+
+    /* ===== CANVAS EMOJIS ===== */
+    #emojis{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+
+    .emoji{
+      position:absolute;
+      top:-50px;
+      opacity: .98;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.35));
+      animation-name: fall, sway;
+      animation-timing-function: linear, ease-in-out;
+      animation-iteration-count: 1, infinite;
+      will-change: transform, top, left, opacity;
+    }
+
+    @keyframes fall{
+      from { transform: translateY(-60px); opacity:0; }
+      10% { opacity:1; }
+      to   { transform: translateY(calc(100vh + 90px)); opacity:0; }
+    }
+
+    @keyframes sway{
+      0%   { margin-left: 0px; }
+      50%  { margin-left: 26px; }
+      100% { margin-left: 0px; }
+    }
+
+    /* ===== BOX DIREITA (PEQUENA + CENTRADA) ===== */
+    .box{
+      width: min(360px, 92vw);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+
+      display:flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+
+      box-shadow: 0 20px 60px rgba(0,0,0,.60);
+      position:relative;
+      z-index:1;
+
+      transition: transform 260ms ease, box-shadow 260ms ease;
+    }
+
+    .box.pop{
+      transform: scale(1.03);
+      box-shadow: 0 30px 120px rgba(0,0,0,.75);
+    }
+
+    .media{
+      width: 100%;
+      display:flex;
+      justify-content:center;
+    }
+
+    .media img{
+      width: 86%;
+      max-width: 260px;
+      height: auto;
+      border-radius: 18px;
+      object-fit: contain;
+      background:#000;
+    }
+
+    .content{
+      width:100%;
+      text-align:center;
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .content h1{
+      margin:0;
+      font-size: 1.25rem;
+      line-height: 1.25;
+    }
+
+    .msg{
+      margin:0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      min-height: 1.1rem;
+    }
+
+    /* ===== BOTÕES ===== */
+    .actions{
+      position: relative; /* arena para o NÃO fugir */
+      width: 100%;
+      height: 46px;
+    }
+
+    button{
+      border: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      position:absolute;
+      top:0;
+      transition: transform .12s ease, opacity .15s ease, left .12s ease, top .12s ease;
+    }
+
+    button:active{ transform: scale(.98); }
+
+    #yes{
+      left: 0;
+      background: linear-gradient(180deg, var(--yes2), var(--yes));
+      box-shadow: 0 12px 28px rgba(255,61,141,.35);
+    }
+
+    #no{
+      left: 140px;
+      background: #2a2b44;
+      border: 1px solid rgba(255,255,255,.14);
+    }
+
+    @media (max-width: 380px){
+      .box{ width:min(330px, 92vw); }
+      #no{ left: 120px; }
+      .layer{ background-position: center 4%; } /* no telemóvel sobe mais */
+    }
+  </style>
+</head>
+
+<body>
+  <!-- BACKGROUND -->
+  <div class="bg">
+    <div class="layer" id="layerA"></div>
+    <div class="layer" id="layerB"></div>
+  </div>
+  <div class="overlay"></div>
+
+  <!-- EMOJIS -->
+  <div id="emojis"></div>
+
+  <!-- BOX -->
+  <div class="box" id="box">
+    <div class="media">
+      <img id="mainImg" src="love.gif" alt="💖" />
+    </div>
+
+    <div class="content">
+      <h1 id="question">Queres ser o meu Valentine’s? 💘</h1>
+
+      <div class="actions" id="arena">
+        <button id="yes" type="button">SIM 💖</button>
+        <button id="no" type="button">NÃO 😳</button>
+      </div>
+
+      <p class="msg" id="msg"></p>
+    </div>
+  </div>
+
+  <script>
+    /* ===== FICHEIROS (na mesma pasta) ===== */
+    const GIF_LOVE = "love.gif";
+    const GIF_YAY  = "yay.gif";
+    const bgPhotos = ["foto1.jpeg","foto2.jpeg","foto3.jpeg","foto4.jpeg"];
+
+    /* ===== ELEMENTOS ===== */
+    const img = document.getElementById("mainImg");
+    const question = document.getElementById("question");
+    const msg = document.getElementById("msg");
+    const yes = document.getElementById("yes");
+    const no = document.getElementById("no");
+    const arena = document.getElementById("arena");
+    const box = document.getElementById("box");
+
+    const layerA = document.getElementById("layerA");
+    const layerB = document.getElementById("layerB");
+    const emojis = document.getElementById("emojis");
+
+    img.src = GIF_LOVE;
+
+    /* ===== PRELOAD ===== */
+    bgPhotos.forEach(src => { const im = new Image(); im.src = src; });
+    [GIF_LOVE, GIF_YAY].forEach(src => { const im = new Image(); im.src = src; });
+
+    /* ===== SLIDESHOW BACKGROUND ===== */
+    let bgIndex = 0;
+    let showA = true;
+
+    layerA.style.backgroundImage = `url("${bgPhotos[0]}")`;
+
+    function nextBg(){
+      bgIndex = (bgIndex + 1) % bgPhotos.length;
+      const url = `url("${bgPhotos[bgIndex]}")`;
+
+      if(showA){
+        layerB.style.backgroundImage = url;
+        layerB.style.opacity = 1;
+        layerA.style.opacity = 0;
+      }else{
+        layerA.style.backgroundImage = url;
+        layerA.style.opacity = 1;
+        layerB.style.opacity = 0;
+      }
+      showA = !showA;
+    }
+    setInterval(nextBg, 4200);
+
+    /* ===== BOTÃO NÃO FOGE (PC + TELEMÓVEL) ===== */
+    function moveNo(){
+      const a = arena.getBoundingClientRect();
+      const bw = no.offsetWidth;
+      const bh = no.offsetHeight;
+
+      const pad = 4;
+      const maxX = Math.max(pad, a.width - bw - pad);
+      const maxY = Math.max(pad, a.height - bh - pad);
+
+      const x = Math.floor(Math.random() * (maxX - pad + 1)) + pad;
+      const y = Math.floor(Math.random() * (maxY - pad + 1)) + pad;
+
+      no.style.left = x + "px";
+      no.style.top  = y + "px";
+    }
+
+    no.addEventListener("mouseenter", moveNo);
+    no.addEventListener("mousedown", (e)=>{ e.preventDefault(); moveNo(); });
+    no.addEventListener("touchstart", (e)=>{ e.preventDefault(); moveNo(); }, {passive:false});
+    no.addEventListener("click", (e)=>{ e.preventDefault(); moveNo(); });
+
+    /* ===== CHUVA DE EMOJIS (muito + macacos) ===== */
+    let emojiTimer = null;
+
+    function spawnEmoji(){
+      const el = document.createElement("div");
+      el.className = "emoji";
+
+      const choices = ["💖","💗","💘","💕","❤️","✨","🙈","🙊","🙉","🐒"];
+      el.textContent = choices[Math.floor(Math.random()*choices.length)];
+
+      const size = 20 + Math.random()*30; // maior
+      el.style.fontSize = size + "px";
+
+      el.style.left = (Math.random()*100) + "vw";
+
+      const dur = 2.6 + Math.random()*2.8; // 2.6-5.4s
+      el.style.animationDuration = `${dur}s, ${1.0 + Math.random()*1.0}s`;
+
+      emojis.appendChild(el);
+      setTimeout(()=> el.remove(), dur*1000 + 400);
+    }
+
+    function startEmojiRain(){
+      if (emojiTimer) return;
+
+      // burst inicial
+      for(let k=0;k<24;k++) setTimeout(spawnEmoji, k*25);
+
+      // chuva intensa
+      emojiTimer = setInterval(spawnEmoji, 40);
+
+      // para ao fim de ~7.5s
+      setTimeout(()=>{
+        clearInterval(emojiTimer);
+        emojiTimer = null;
+      }, 7500);
+    }
+
+    /* ===== SIM: TROCA TUDO + POP + EMOJIS ===== */
+    yes.addEventListener("click", () => {
+      img.src = GIF_YAY;
+      question.textContent = "EEEEE AÍÍÍÍ!!! 🚀💖";
+      msg.textContent = "Já sabia que ias aceitar 😌";
+
+      // animação pop
+      box.classList.remove("pop");
+      void box.offsetWidth;
+      box.classList.add("pop");
+
+      // emojis
+      startEmojiRain();
+
+      // desativar botões
+      yes.disabled = true;
+      no.disabled = true;
+      yes.style.opacity = 0.72;
+      no.style.opacity = 0.45;
+    });
+  </script>
+</body>
+</html>
